@@ -1,2 +1,18 @@
 /.env
 /var/
+
+
+## git
+
+*.orig
+
+
+## nfs
+
+.nfs*
+
+
+## vim
+
+*.swo
+*.swp
