@@ -9,9 +9,9 @@ fi
 test ! -e /var/postgresql/data/pg_hba.conf
 INITIALIZE_DB=$?
 
-pg_autoctl create coordinator --ssl-self-signed \
-    --hostname=${PG_HOST} --pgport=${PG_PORT} --name=${PG_NAME} \
-    --skip-pg-hba --auth=scram-sha-256
+pg_autoctl create monitor --ssl-self-signed \
+    --hostname=$(hostname) --pgport=${MONITOR_PORT} \
+    --skip-pg-hba
 
 . /boot-common.sh
 
@@ -25,7 +25,7 @@ PID=$!
 
 if [ $INITIALIZE_DB -eq 0 ]
 then
-    until pg_isready -p ${PG_PORT}
+    until pg_isready -p ${MONITOR_PORT}
     do
         sleep 10
     done

@@ -8,51 +8,53 @@ services:
     image: postgresql-citusdata
     container_name: monitor.test
     command: /boot.sh
+    hostname: monitor.test
     environment:
-      - PG_HOST=monitor.test
-      - PG_PORT=${MONITOR_PORT}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - MONITOR_PASSWORD=${MONITOR_PASSWORD}
       - PGDATA=/var/postgresql/data
       - ACTING_UID=${UID}
       - ACTING_GID=${GID}
+      - MONITOR_PASSWORD=${MONITOR_PASSWORD}
+      - MONITOR_PORT=${MONITOR_PORT}
     volumes:
-      - ./postgresql/scripts/boot-root.sh:/boot.sh
-      - ./postgresql/scripts/boot-common.sh:/boot-common.sh
-      - ./postgresql/scripts/boot-monitor.sh:/boot-user.sh
+      - ./scripts/boot-root.sh:/boot.sh
+      - ./scripts/boot-common.sh:/boot-common.sh
+      - ./scripts/boot-monitor.sh:/boot-user.sh
       - ./etc/monitor/pre.d:/initdb.pre.d
       - ./etc/monitor/post.d:/initdb.post.d
       - ./var/monitor:/var/postgresql
     healthcheck:
       test: pg_isready -p ${MONITOR_PORT} -d pg_auto_failover
     #restart: unless-stopped
-    user: "${UID}:${GID}"
+    networks:
+      - test_internal
 
   hadb1.test:
     image: postgresql-citusdata
     container_name: hadb1.test
     command: /boot.sh
+    hostname: hadb1.infran
     environment:
-      - PG_NAME=hadb1
-      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
-      - PG_HOST=hadb1.test
-      - PG_PORT=${DATABASE_PORT}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - PGDATA=/var/postgresql/data
       - ACTING_UID=${UID}
       - ACTING_GID=${GID}
+      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - PG_NAME=hadb1
+      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
     volumes:
-      - ./postgresql/scripts/boot-root.sh:/boot.sh
-      - ./postgresql/scripts/boot-common.sh:/boot-common.sh
-      - ./postgresql/scripts/boot-database.sh:/boot-user.sh
+      - ./scripts/boot-root.sh:/boot.sh
+      - ./scripts/boot-common.sh:/boot-common.sh
+      - ./scripts/boot-database.sh:/boot-user.sh
       - ./etc/hadb1/pre.d:/initdb.pre.d
       - ./etc/hadb1/post.d:/initdb.post.d
       - ./var/hadb1:/var/postgresql
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
     #restart: unless-stopped
-    user: "${UID}:${GID}"
+    networks:
+      - test_internal
     depends_on:
       monitor.test:
         condition: service_healthy
@@ -61,29 +63,38 @@ services:
     image: postgresql-citusdata
     container_name: hadb2.test
     command: /boot.sh
+    hostname: hadb2.infran
     environment:
-      - PG_NAME=hadb2
-      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
-      - PG_HOST=hadb2.test
-      - PG_PORT=${DATABASE_PORT}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - PGDATA=/var/postgresql/data
       - ACTING_UID=${UID}
       - ACTING_GID=${GID}
+      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - PG_NAME=hadb2
+      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
     volumes:
-      - ./postgresql/scripts/boot-root.sh:/boot.sh
-      - ./postgresql/scripts/boot-common.sh:/boot-common.sh
-      - ./postgresql/scripts/boot-database.sh:/boot-user.sh
+      - ./scripts/boot-root.sh:/boot.sh
+      - ./scripts/boot-common.sh:/boot-common.sh
+      - ./scripts/boot-database.sh:/boot-user.sh
       - ./etc/hadb2/pre.d:/initdb.pre.d
       - ./etc/hadb2/post.d:/initdb.post.d
       - ./var/hadb2:/var/postgresql
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
     #restart: unless-stopped
-    user: "${UID}:${GID}"
+    networks:
+      - test_internal
     depends_on:
       monitor.test:
         condition: service_healthy
       hadb1.test:
         condition: service_healthy
+
+networks:
+  test_internal:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.103.0.0/16
