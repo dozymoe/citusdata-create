@@ -16,6 +16,9 @@ services:
       - ACTING_GID=${GID}
       - MONITOR_PASSWORD=${MONITOR_PASSWORD}
       - MONITOR_PORT=${MONITOR_PORT}
+      - MONITOR_IPS=${MONITOR_IPS}
+      - DATABASE_IPS=${DATABASE_IPS}
+      - CLUSTER_IPS=${CLUSTER_IPS}
     volumes:
       - ./scripts/boot-root.sh:/boot.sh
       - ./scripts/boot-common.sh:/boot-common.sh
@@ -41,6 +44,9 @@ services:
       - ACTING_GID=${GID}
       - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - DATABASE_PORT=${DATABASE_PORT}
+      - MONITOR_IPS=${MONITOR_IPS}
+      - DATABASE_IPS=${DATABASE_IPS}
+      - CLUSTER_IPS=${CLUSTER_IPS}
       - PG_NAME=hadb1
       - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
     volumes:
@@ -53,7 +59,7 @@ services:
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
       timeout: 1m
-      retries: 10
+      retries: 60
     #restart: unless-stopped
     networks:
       - test_internal
@@ -73,6 +79,9 @@ services:
       - ACTING_GID=${GID}
       - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - DATABASE_PORT=${DATABASE_PORT}
+      - MONITOR_IPS=${MONITOR_IPS}
+      - DATABASE_IPS=${DATABASE_IPS}
+      - CLUSTER_IPS=${CLUSTER_IPS}
       - PG_NAME=hadb2
       - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
     volumes:
@@ -85,7 +94,7 @@ services:
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
       timeout: 1m
-      retries: 10
+      retries: 60
     #restart: unless-stopped
     networks:
       - test_internal
@@ -107,6 +116,9 @@ services:
       - ACTING_GID=${GID}
       - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - CLUSTER_PORT=${CLUSTER_PORT}
+      - MONITOR_IPS=${MONITOR_IPS}
+      - DATABASE_IPS=${DATABASE_IPS}
+      - CLUSTER_IPS=${CLUSTER_IPS}
       - PG_NAME=clus1
       - PG_GROUP=11
       - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@db_monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
@@ -140,6 +152,9 @@ services:
       - ACTING_GID=${GID}
       - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
       - CLUSTER_PORT=${CLUSTER_PORT}
+      - MONITOR_IPS=${MONITOR_IPS}
+      - DATABASE_IPS=${DATABASE_IPS}
+      - CLUSTER_IPS=${CLUSTER_IPS}
       - PG_NAME=clus2
       - PG_GROUP=12
       - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@db_monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
