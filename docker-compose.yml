@@ -3,12 +3,12 @@ version: "3.3"
 services:
 
   monitor.test:
+    container_name: monitor.test
+    hostname: monitor.test
     build:
       context: ./postgresql/
     image: postgresql-citusdata
-    container_name: monitor.test
     command: /boot.sh
-    hostname: monitor.test
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/var/postgresql/data
@@ -30,10 +30,10 @@ services:
       - test_internal
 
   hadb1.test:
-    image: postgresql-citusdata
     container_name: hadb1.test
+    hostname: hadb1.test
+    image: postgresql-citusdata
     command: /boot.sh
-    hostname: hadb1.infran
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/var/postgresql/data
@@ -52,6 +52,8 @@ services:
       - ./var/hadb1:/var/postgresql
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
+      timeout: 1m
+      retries: 10
     #restart: unless-stopped
     networks:
       - test_internal
@@ -60,10 +62,10 @@ services:
         condition: service_healthy
 
   hadb2.test:
-    image: postgresql-citusdata
     container_name: hadb2.test
+    hostname: hadb2.test
+    image: postgresql-citusdata
     command: /boot.sh
-    hostname: hadb2.infran
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/var/postgresql/data
@@ -82,6 +84,74 @@ services:
       - ./var/hadb2:/var/postgresql
     healthcheck:
       test: pg_isready -p ${DATABASE_PORT}
+      timeout: 1m
+      retries: 10
+    #restart: unless-stopped
+    networks:
+      - test_internal
+    depends_on:
+      monitor.test:
+        condition: service_healthy
+      hadb1.test:
+        condition: service_healthy
+
+  cluster1.test:
+    container_name: cluster1.test
+    hostname: cluster1.test
+    image: postgresql-citusdata
+    command: /boot.sh
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/postgresql/data
+      - ACTING_UID=${UID}
+      - ACTING_GID=${GID}
+      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
+      - CLUSTER_PORT=${CLUSTER_PORT}
+      - PG_NAME=clus1
+      - PG_GROUP=11
+      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@db_monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
+    volumes:
+      - ./scripts/boot-root.sh:/boot.sh
+      - ./scripts/boot-common.sh:/boot-common.sh
+      - ./scripts/boot-cluster.sh:/boot-user.sh
+      - ./etc/cluster1/pre.d:/initdb.pre.d
+      - ./etc/cluster1/post.d:/initdb.post.d
+      - ./var/cluster1:/var/postgresql
+    healthcheck:
+      test: pg_isready -p ${CLUSTER_PORT}
+    #restart: unless-stopped
+    networks:
+      - test_internal
+    depends_on:
+      monitor.test:
+        condition: service_healthy
+      hadb1.test:
+        condition: service_healthy
+
+  cluster2.test:
+    container_name: cluster2.test
+    hostname: cluster2.test
+    image: postgresql-citusdata
+    command: /boot.sh
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/postgresql/data
+      - ACTING_UID=${UID}
+      - ACTING_GID=${GID}
+      - REPLICATION_PASSWORD=${REPLICATION_PASSWORD}
+      - CLUSTER_PORT=${CLUSTER_PORT}
+      - PG_NAME=clus2
+      - PG_GROUP=12
+      - PG_AUTOCTL_MONITOR=postgresql://autoctl_node:${MONITOR_PASSWORD}@db_monitor.test:${MONITOR_PORT}/pg_auto_failover?sslmode=require
+    volumes:
+      - ./scripts/boot-root.sh:/boot.sh
+      - ./scripts/boot-common.sh:/boot-common.sh
+      - ./scripts/boot-cluster.sh:/boot-user.sh
+      - ./etc/cluster2/pre.d:/initdb.pre.d
+      - ./etc/cluster2/post.d:/initdb.post.d
+      - ./var/cluster2:/var/postgresql
+    healthcheck:
+      test: pg_isready -p ${CLUSTER_PORT}
     #restart: unless-stopped
     networks:
       - test_internal
