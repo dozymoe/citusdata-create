@@ -24,7 +24,5 @@ RUN echo "shared_preload_libraries='citus,pgautofailover'" \
 
 RUN apt-get autoclean -y && rm -rf /var/lib/apt/lists/*
 
-RUN groupmod -g $gid postgres && usermod -u $uid postgres
-RUN chown -R $uid:$gid /var/lib/postgresql /var/run/postgresql
-
 #HEALTHCHECK &{["CMD-SHELL" "./pg_healthcheck"] "4s" "0s" "6s" '\x00'}
+
